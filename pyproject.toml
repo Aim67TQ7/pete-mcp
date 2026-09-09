@@ -1,0 +1,9 @@
+[project]
+name = "pete-mcp-gateway"
+version = "0.1.0"
+description = "PETE MCP Gateway: one remote MCP endpoint for shared tools, memory, jobs and reporting across Claude, ChatGPT, Gemini, Grok and PETE clients"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

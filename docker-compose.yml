@@ -1,0 +1,23 @@
+# PETE MCP Gateway stack. env_file points at the server-side .env (never in
+# git). The reverse proxy (existing Caddy) terminates HTTPS and forwards
+# mcp.by-pete.com -> gateway:8080 (see deploy/Caddyfile.snippet).
+services:
+  gateway:
+    build: .
+    container_name: pete-mcp-gateway
+    env_file: .env
+    ports:
+      - "127.0.0.1:8091:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8080/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build: .
+    container_name: pete-mcp-worker
+    env_file: .env
+    command: ["python", "-m", "gateway.worker"]
+    restart: unless-stopped

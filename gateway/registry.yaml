@@ -1,0 +1,97 @@
+# Connector registry — the single source of truth for what the gateway can
+# reach and which operations each connector exposes. Env entries are VARIABLE
+# NAMES, never values. Adding a simple REST connector = adding an entry here.
+#
+# auth styles: bearer | header | basic_env | none
+# write: true operations require an explicit connector:<name>:write scope and
+# an effect_key; read operations require connector:<name>:read.
+
+connectors:
+  github:
+    kind: http
+    base_url: https://api.github.com
+    auth: { style: bearer, env: GITHUB_TOKEN }
+    headers: { Accept: application/vnd.github+json }
+    probe: { method: GET, path: /user }
+    operations:
+      whoami:      { method: GET, path: /user }
+      repos_list:  { method: GET, path: /user/repos, params: [per_page, page, sort] }
+      repo_get:    { method: GET, path: "/repos/{owner}/{repo}", params: [owner, repo] }
+      issues_list: { method: GET, path: "/repos/{owner}/{repo}/issues", params: [owner, repo, state, per_page] }
+      issue_create: { method: POST, path: "/repos/{owner}/{repo}/issues", params: [owner, repo], body: [title, body, labels], write: true }
+
+  hubspot:
+    kind: http
+    base_url: https://api.hubapi.com
+    auth: { style: bearer, env: HUBSPOT_TOKEN }
+    probe: { method: GET, path: /crm/v3/objects/contacts, query: { limit: "1" } }
+    operations:
+      contacts_list:   { method: GET, path: /crm/v3/objects/contacts, params: [limit, after] }
+      contacts_search: { method: POST, path: /crm/v3/objects/contacts/search, body: [filterGroups, query, limit] }
+      companies_list:  { method: GET, path: /crm/v3/objects/companies, params: [limit, after] }
+      deals_list:      { method: GET, path: /crm/v3/objects/deals, params: [limit, after] }
+      contact_create:  { method: POST, path: /crm/v3/objects/contacts, body: [properties], write: true }
+
+  stripe:
+    kind: http
+    base_url: https://api.stripe.com
+    auth: { style: bearer, env: STRIPE_API_KEY }
+    probe: { method: GET, path: /v1/balance }
+    operations:
+      balance:       { method: GET, path: /v1/balance }
+      charges_list:  { method: GET, path: /v1/charges, params: [limit] }
+      payouts_list:  { method: GET, path: /v1/payouts, params: [limit] }
+      # checkout_create intentionally NOT registered yet: finance_create_checkout
+      # ships only with verified offer constraints (spec: defined offers only).
+
+  netlify:
+    kind: http
+    base_url: https://api.netlify.com
+    auth: { style: bearer, env: NETLIFY_TOKEN }
+    probe: { method: GET, path: /api/v1/user }
+    operations:
+      sites_list:   { method: GET, path: /api/v1/sites, params: [page, per_page] }
+      site_get:     { method: GET, path: "/api/v1/sites/{site_id}", params: [site_id] }
+      deploys_list: { method: GET, path: "/api/v1/sites/{site_id}/deploys", params: [site_id, per_page] }
+
+  slack:
+    kind: http
+    base_url: https://slack.com
+    auth: { style: bearer, env: SLACK_BOT_TOKEN }
+    probe: { method: POST, path: /api/auth.test }
+    operations:
+      auth_test:    { method: POST, path: /api/auth.test }
+      post_message: { method: POST, path: /api/chat.postMessage, body: [channel, text], write: true }
+
+  heygen:
+    kind: http
+    base_url: https://api.heygen.com
+    auth: { style: header, env: HEYGEN_API_KEY, header: X-Api-Key }
+    probe: { method: GET, path: /v2/user/remaining_quota }
+    operations:
+      quota:       { method: GET, path: /v2/user/remaining_quota }
+      videos_list: { method: GET, path: /v2/videos, params: [limit] }
+
+  make:
+    kind: http
+    base_url: https://us1.make.com
+    auth: { style: header, env: MAKE_API_TOKEN, header: Authorization, prefix: "Token " }
+    probe: { method: GET, path: /api/v2/users/me }
+    operations:
+      me: { method: GET, path: /api/v2/users/me }
+
+  cloudflare:
+    kind: http
+    base_url: https://api.cloudflare.com
+    auth: { style: bearer, env: CLOUDFLARE_API_TOKEN }
+    probe: { method: GET, path: /client/v4/user/tokens/verify }
+    operations:
+      verify:     { method: GET, path: /client/v4/user/tokens/verify }
+      zones_list: { method: GET, path: /client/v4/zones, params: [per_page] }
+
+  # Multi-instance / multi-account connectors use dedicated adapters:
+  supabase: { kind: adapter, module: supabase, instances: [ZODA, PZLO, MCPDB] }
+  epicor:   { kind: adapter, module: epicor,   instances: [BMC, BME, MAI] }
+  gmail:    { kind: adapter, module: gmail,    instances: [PETE, LEAN] }
+  ms365:    { kind: adapter, module: ms365 }
+  vps:      { kind: adapter, module: vps,      instances: [MAGGIE, BUNTING, PETE] }
