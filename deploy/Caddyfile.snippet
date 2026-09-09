@@ -1,0 +1,9 @@
+# Additive snippet for the existing Caddy on the chosen host.
+# PROPOSED name only — inspect current DNS/certs/routes before provisioning
+# mcp.by-pete.com. Per CURRENT_PRIORITIES the Pete VPS is dark
+# (terminate-or-recover); Maggie (89.116.157.23) is the recommended host
+# until that decision lands.
+
+mcp.by-pete.com {
+	reverse_proxy 127.0.0.1:8091
+}
